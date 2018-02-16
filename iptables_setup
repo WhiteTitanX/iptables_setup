@@ -1,14 +1,23 @@
 #!/bin/bash
 
+if [ "$EUID" -ne 0 ]; then
+	printf "Please run scripts as root\n"
+	exit;
+fi
+
 #Flush iptables
 
 iptables -F
+
+printf "Flushed iptables\n"
 
 #Policies
 
 iptables -P OUTPUT DROP
 iptables -P INPUT DROP
 iptables -P FORWARD DROP
+
+printf "Setup default policies\n"
 
 #Input Chain Rules
 
@@ -24,6 +33,7 @@ iptables -A INPUT -i enp0s3 -p tcp --sport 443 -m state --state ESTABLISHED,RELA
 iptables -A INPUT -i enp0s3 -p tcp --sport 53 -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A INPUT -i enp0s3 -p udp --sport 53 -m state --state ESTABLISHED,RELATED -j ACCEPT
 
+printf "Setup input rules\n"
 
 #Output Chain Rules
 
@@ -37,7 +47,14 @@ iptables -A OUTPUT -o enp0s3 -p tcp --dport 443 -j ACCEPT
 #Allow ssh
 #iptables -A OUTPUT -o enp0s3 -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
 
+printf "Setup output rules\n"
 
 #Save Rules
 iptables-save > /etc/iptables.conf
+results=$(grep "iptables-restore < /etc/iptables.conf" /etc/rc.local)
+if [ ${#results} -eq 0 ]; then
+	sed -i '/exit 0/iiptables-restore < /etc/iptables.conf' /etc/rc.local
+	printf "Added iptables-restore < /etc/iptables.conf to /etc/rc.local\n"
+fi
 
+printf "Saved iptables rules\n"
