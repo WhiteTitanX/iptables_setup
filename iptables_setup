@@ -1,0 +1,43 @@
+#!/bin/bash
+
+#Flush iptables
+
+iptables -F
+
+#Policies
+
+iptables -P OUTPUT DROP
+iptables -P INPUT DROP
+iptables -P FORWARD DROP
+
+#Input Chain Rules
+
+iptables -A INPUT -i lo -j ACCEPT
+
+#Allow ssh
+#iptables -A INPUT -i enp0s3 -p tcp --dport 22 -m state --state NEW,ESTABLISHED -j ACCEPT
+
+#Allow established connections
+#iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -i enp0s3 -p tcp --sport 80 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -i enp0s3 -p tcp --sport 443 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -i enp0s3 -p tcp --sport 53 -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -i enp0s3 -p udp --sport 53 -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+
+#Output Chain Rules
+
+iptables -A OUTPUT -o lo -j ACCEPT
+
+iptables -A OUTPUT -o enp0s3 -p tcp --dport 80 -j ACCEPT
+iptables -A OUTPUT -o enp0s3 -p tcp --dport 53 -j ACCEPT
+iptables -A OUTPUT -o enp0s3 -p udp --dport 53 -j ACCEPT
+iptables -A OUTPUT -o enp0s3 -p udp --dport 67:68 -j ACCEPT
+iptables -A OUTPUT -o enp0s3 -p tcp --dport 443 -j ACCEPT
+#Allow ssh
+#iptables -A OUTPUT -o enp0s3 -p tcp --sport 22 -m state --state ESTABLISHED -j ACCEPT
+
+
+#Save Rules
+iptables-save > /etc/iptables.conf
+
